@@ -1,0 +1,4 @@
+dashscope
+pyaudio
+openai
+jinja2
