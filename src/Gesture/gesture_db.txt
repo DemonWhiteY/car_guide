@@ -1,0 +1,5 @@
+fist,001
+thumbs_up,002
+wave,003
+yes,004
+tick,005
