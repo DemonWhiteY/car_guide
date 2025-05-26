@@ -1,7 +1,6 @@
 import cv2
 import mediapipe as mp
 import os
-import math
 
 # 数据库：手势名 -> 指令码
 DB_PATH = 'gesture_db.txt'
@@ -155,13 +154,89 @@ def main_recognition(video_path = "" , change = False , ins = " ",file_path = " 
             print("[警告] 未识别到数据库中的指令")
             return None
 if __name__ == '__main__':
-    main_recognition(video_path = "gestures/fist.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
-    main_recognition(video_path = "gestures/thumbs_up.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
-    main_recognition(video_path = "gestures/wave.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
-    main_recognition(video_path = "gestures/yes.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
-    main_recognition(video_path = "gestures/tick.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
+    import time
+    import cProfile
+    import pstats
+    import matplotlib.pyplot as plt
+
+    plt.rcParams['font.sans-serif'] = ['SimHei'] 
+    plt.rcParams['axes.unicode_minus'] = False 
+
+    # 测试用例列表
+    test_cases = [
+        ("gestures/fist.mp4", "new_gesture/tick.mp4"),
+        ("gestures/thumbs_up.mp4", "new_gesture/tick.mp4"),
+        ("gestures/wave.mp4", "new_gesture/tick.mp4"),
+        ("gestures/yes.mp4", "new_gesture/tick.mp4"),
+        ("gestures/tick.mp4", "new_gesture/tick.mp4")
+    ]
+
+    # 性能数据存储
+    runtime_data = []
+    profiler = cProfile.Profile()
+
+    # 遍历所有测试用例
+    for idx, (video_path, file_path) in enumerate(test_cases):
+        case_name = video_path.split('/')[-1].split('.')[0]  # 提取手势名称
+        
+        # 使用cProfile进行分析
+        profiler.enable()
+        start_time = time.time()
+        
+        # 原函数调用
+        main_recognition(
+            video_path=video_path,
+            change=False,
+            ins="change 001 r",
+            file_path=file_path
+        )
+        
+        # 记录性能数据
+        elapsed = time.time() - start_time
+        profiler.disable()
+        runtime_data.append((case_name, elapsed))
+        
+        # 保存cProfile结果
+        stats = pstats.Stats(profiler)
+        stats.dump_stats(f"perf_{case_name}.prof")
+
+    # 生成对比图表
+    plt.figure(figsize=(10, 6))
+    names = [x[0] for x in runtime_data]
+    times = [x[1] for x in runtime_data]
+    
+    bars = plt.bar(names, times, color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'])
+    plt.title('手势识别性能对比', fontsize=14)
+    plt.xlabel('测试用例', fontsize=12)
+    plt.ylabel('运行时间 (秒)', fontsize=12)
+    plt.xticks(rotation=45)
+    
+    # 添加数值标签
+    for bar in bars:
+        height = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width()/2., height,
+                 f'{height:.2f}',
+                 ha='center', va='bottom')
+    
+    plt.tight_layout()
+    
+    # 保存并显示图表
+    plt.savefig('performance_comparison.png', dpi=300)
+    plt.show()
+
+    # 打印控制台报告
+    print("\n=== 性能测试报告 ===")
+    print(f"{'测试用例':<15} | {'运行时间(s)':<10}")
+    print("-" * 30)
+    for name, t in runtime_data:
+        print(f"{name:<15} | {t:.2f}")
+    # main_recognition(video_path = "gestures/fist.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
+    # main_recognition(video_path = "gestures/thumbs_up.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
+    # main_recognition(video_path = "gestures/wave.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
+    # main_recognition(video_path = "gestures/yes.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
+    # main_recognition(video_path = "gestures/tick.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
     # main_recognition(video_path = "gestures/1.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
     # main_recognition(video_path = "gestures/2.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
     # main_recognition(video_path = "gestures/3.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
     # main_recognition(video_path = "gestures/4.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
-    # main_recognition(video_path = "gestures/4.mp4",change = True, ins = "change 005 a ",file_path = "new_gesture/tick.mp4 ")
+    #main_recognition(video_path = "gestures/4.mp4",change = True, ins = "change 005 a ",file_path = "new_gesture/tick.mp4 ")
