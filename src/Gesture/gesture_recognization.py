@@ -6,6 +6,11 @@ import os
 DB_PATH = 'gesture_db.txt'
 
 def load_gesture_db():
+    """从文本文件加载手势数据库
+    
+    返回:
+        dict: 手势名称到指令码的映射字典
+    """
     db = {}
     if os.path.exists(DB_PATH):
         with open(DB_PATH, 'r') as f:
@@ -15,11 +20,25 @@ def load_gesture_db():
     return db
 
 def save_gesture_db(db):
+    """将手势数据库保存到文本文件
+    
+    参数:
+        db (dict): 手势名称到指令码的映射字典
+    """
     with open(DB_PATH, 'w') as f:
         for gesture, code in db.items():
             f.write(f"{gesture},{code}\n")
 
 def classify_gesture(landmarks) -> str:
+    """根据手部关键点坐标进行手势分类
+    
+    参数:
+        landmarks (list): mediapipe手部关键点坐标列表
+        
+    返回:
+        str: 识别出的手势名称，可能值包括：
+            'yes', 'tick', 'fist', 'thumbs_up', 'wave', 'unknown'
+    """
     tip_ids = [4, 8, 12, 16, 20]
     pip_ids = [3, 6, 10, 14, 18]
 
@@ -53,6 +72,15 @@ def classify_gesture(landmarks) -> str:
 
 
 def recognize_gesture_from_video(video_path, show=False):
+    """从视频中识别手势
+    
+    参数:
+        video_path (str): 视频文件路径
+        show (bool): 是否实时显示视频画面
+        
+    返回:
+        str: 识别出的主要手势名称
+    """
     mp_hands = mp.solutions.hands
     hands = mp_hands.Hands(static_image_mode=False, max_num_hands=1)
     cap = cv2.VideoCapture(video_path)
@@ -88,6 +116,15 @@ def recognize_gesture_from_video(video_path, show=False):
     return max((k for k in gesture_counter if k != "unknown"), key=gesture_counter.get)
 
 def handle_command(command_str,file_path):
+    """处理用户指令，修改手势数据库
+    
+    参数:
+        command_str (str): 用户输入的指令字符串
+        file_path (str): 手势视频文件路径
+        
+    返回:
+        None: 结果通过print输出
+    """
     db = load_gesture_db()
     parts = command_str.strip().split()
 
