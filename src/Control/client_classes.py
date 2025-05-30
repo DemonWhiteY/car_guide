@@ -1,54 +1,27 @@
-# client_classes.py (各模块客户端类)
 from base_client import BaseClient
 
 
-# UI 客户端
-class UICommunication:
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = BaseClient('ui')
-        return cls._instance
+class UICommunication(BaseClient):
+    def __init__(self, identity, server_host='127.0.0.1', server_port=65432):
+        super().__init__(identity, server_host, server_port)
 
 
-# LLM 客户端
-class LLMCommunication:
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = BaseClient('llm')
-        return cls._instance
+class LLMCommunication(BaseClient):
+    def __init__(self, identity, server_host='127.0.0.1', server_port=65432):
+        super().__init__(identity, server_host, server_port)
 
 
-# Face 客户端
-class FaceCommunication:
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = BaseClient('face')
-        return cls._instance
+class FaceCommunication(BaseClient):
+    def __init__(self, identity, server_host='127.0.0.1', server_port=65432):
+        super().__init__(identity, server_host, server_port)
 
 
-# Gesture 客户端
-class GestureCommunication:
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = BaseClient('gesture')
-        return cls._instance
+class GestureCommunication(BaseClient):
+    def __init__(self, identity, server_host='127.0.0.1', server_port=65432):
+        super().__init__(identity, server_host, server_port)
 
 
-# Voice 客户端
-class VoiceCommunication:
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = BaseClient('voice')
-        return cls._instance
-
-
+class VoiceCommunication(BaseClient):
+    def __init__(self, identity, server_host='127.0.0.1', server_port=65432):
+        super().__init__(identity, server_host, server_port)
+        

@@ -1,4 +1,3 @@
-# base_client.py (修复版本)
 import socket
 import threading
 import json
@@ -66,12 +65,12 @@ class BaseClient:
 
         try:
             self.socket.sendall(json.dumps(message).encode('utf-8'))
+            print(f"{self.identity.capitalize()} sent message to {target}: {data}")
         except (ConnectionResetError, BrokenPipeError, OSError) as e:
             print(f"{self.identity} connection error: {e}, reconnecting...")
             self.connected = False
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # 重新创建socket
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.connect_to_server()
-            # 重试发送
             if self.connected:
                 self.socket.sendall(json.dumps(message).encode('utf-8'))
 
@@ -86,7 +85,7 @@ class BaseClient:
                 if not data:
                     print(f"{self.identity}: Connection closed by server")
                     self.connected = False
-                    self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # 重新创建socket
+                    self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     self.connect_to_server()
                     continue
 
@@ -94,12 +93,12 @@ class BaseClient:
             except ConnectionResetError:
                 print(f"{self.identity}: Connection reset by server")
                 self.connected = False
-                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # 重新创建socket
+                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.connect_to_server()
             except Exception as e:
                 print(f"{self.identity}: Error in receiving: {e}")
                 self.connected = False
-                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # 重新创建socket
+                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.connect_to_server()
 
     def handle_message(self, data):

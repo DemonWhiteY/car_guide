@@ -1,8 +1,8 @@
-# comm_objects.py
 from control import ControlServer
 from client_classes import UICommunication, LLMCommunication, FaceCommunication, GestureCommunication, \
     VoiceCommunication
 import threading
+import time
 
 
 class CommObjects:
@@ -29,18 +29,6 @@ class CommObjects:
 
         # 创建服务器实例
         self._control_server = ControlServer(host, port)
-
-        # 在单独线程中运行服务器
-        def server_run():
-            try:
-                while True:
-                    # 服务器主循环
-                    time.sleep(1)
-            except KeyboardInterrupt:
-                self._control_server.shutdown()
-
-        self._server_thread = threading.Thread(target=server_run, daemon=True)
-        self._server_thread.start()
         print(f"Control server started at {host}:{port}")
 
     def stop_control_server(self):
@@ -48,7 +36,6 @@ class CommObjects:
         if self._control_server:
             self._control_server.shutdown()
             self._control_server = None
-            self._server_thread = None
             print("Control server stopped")
 
     @property
@@ -61,7 +48,7 @@ class CommObjects:
         """获取UI通信实例"""
         if self._ui_comm is None:
             print("Creating UI communication instance")
-            self._ui_comm = UICommunication()
+            self._ui_comm = UICommunication('ui')  # 添加身份参数
         return self._ui_comm
 
     @property
@@ -69,7 +56,7 @@ class CommObjects:
         """获取LLM通信实例"""
         if self._llm_comm is None:
             print("Creating LLM communication instance")
-            self._llm_comm = LLMCommunication()
+            self._llm_comm = LLMCommunication('llm')  # 添加身份参数
         return self._llm_comm
 
     @property
@@ -77,7 +64,7 @@ class CommObjects:
         """获取Face通信实例"""
         if self._face_comm is None:
             print("Creating Face communication instance")
-            self._face_comm = FaceCommunication()
+            self._face_comm = FaceCommunication('face')  # 添加身份参数
         return self._face_comm
 
     @property
@@ -85,7 +72,7 @@ class CommObjects:
         """获取Gesture通信实例"""
         if self._gesture_comm is None:
             print("Creating Gesture communication instance")
-            self._gesture_comm = GestureCommunication()
+            self._gesture_comm = GestureCommunication('gesture')  # 添加身份参数
         return self._gesture_comm
 
     @property
@@ -93,7 +80,7 @@ class CommObjects:
         """获取Voice通信实例"""
         if self._voice_comm is None:
             print("Creating Voice communication instance")
-            self._voice_comm = VoiceCommunication()
+            self._voice_comm = VoiceCommunication('voice')  # 添加身份参数
         return self._voice_comm
 
 
