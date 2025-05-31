@@ -1,9 +1,18 @@
 import cv2
 import mediapipe as mp
 import os
+import time
 
 # 数据库：手势名 -> 指令码
 DB_PATH = 'gesture_db.txt'
+ges = {
+    "000": '{"ges": ""}',
+    "001": '{"ges": "用户要暂停音乐"}',
+    "002": '{"ges": "用户表示了赞同"}',
+    "003": '{"ges": "用户表示了拒绝"}',
+    "004": '{"ges": "用户需要打开空调"}',
+    "005": '{"ges": "用户需要播放音乐"}'
+}
 
 def load_gesture_db():
     """从文本文件加载手势数据库
@@ -182,91 +191,199 @@ def main_recognition(video_path = "" , change = False , ins = " ",file_path = " 
     else: 
         db = load_gesture_db()
         gesture = recognize_gesture_from_video(video_path)
-        print(f"[识别结果] 手势: {gesture}")
 
         if gesture in db:
-            print(f"[输出指令] 指令码为: {db[gesture]}")
+            print(ges[db[gesture]])
+            #send_command(ges[db[gesture]])
             return db[gesture]
         else:
             print("[警告] 未识别到数据库中的指令")
             return None
-if __name__ == '__main__':
-    import time
-    import cProfile
-    import pstats
-    import matplotlib.pyplot as plt
 
-    plt.rcParams['font.sans-serif'] = ['SimHei'] 
-    plt.rcParams['axes.unicode_minus'] = False 
 
-    # 测试用例列表
-    test_cases = [
-        ("gestures/fist.mp4", "new_gesture/tick.mp4"),
-        ("gestures/thumbs_up.mp4", "new_gesture/tick.mp4"),
-        ("gestures/wave.mp4", "new_gesture/tick.mp4"),
-        ("gestures/yes.mp4", "new_gesture/tick.mp4"),
-        ("gestures/tick.mp4", "new_gesture/tick.mp4")
-    ]
-
-    # 性能数据存储
-    runtime_data = []
-    profiler = cProfile.Profile()
-
-    # 遍历所有测试用例
-    for idx, (video_path, file_path) in enumerate(test_cases):
-        case_name = video_path.split('/')[-1].split('.')[0]  # 提取手势名称
+def camera_gesture_recognition():
+    """通过摄像头实时识别手势并输出指令"""
+    mp_hands = mp.solutions.hands
+    hands = mp_hands.Hands(static_image_mode=False, max_num_hands=1)
+    cap = cv2.VideoCapture(0)  # 打开默认摄像头
+    db = load_gesture_db()
+    
+    gesture_counter = {}
+    last_command_time = time.time()
+    current_command = None
+    pr_command = None
+    command_display_duration = 3  # 显示命令的持续时间(秒)
+    
+    while cap.isOpened():
+        success, frame = cap.read()
+        if not success:
+            print("无法读取摄像头画面")
+            break
         
-        # 使用cProfile进行分析
-        profiler.enable()
-        start_time = time.time()
+        # 转换为RGB格式
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = hands.process(frame_rgb)
         
-        # 原函数调用
+        gesture_name = "unknown"
+        if results.multi_hand_landmarks:
+            landmarks = results.multi_hand_landmarks[0].landmark
+            gesture_name = classify_gesture(landmarks)
+            
+            # 更新手势计数器
+            gesture_counter[gesture_name] = gesture_counter.get(gesture_name, 0) + 1
+        
+        # 显示当前帧识别结果
+        cv2.putText(frame, f"Current: {gesture_name}", (10, 30), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        
+        # 每1秒确定一次主要手势
+        current_time = time.time()
+        if current_time - last_command_time > 1.0 and gesture_counter:
+            # 找到出现次数最多的手势
+            main_gesture = max(gesture_counter, key=gesture_counter.get)
+            
+            # 忽略"unknown"手势
+            if main_gesture != "unknown":
+                if main_gesture in db:
+                    current_command = db[main_gesture]
+                else:
+                    current_command = "未定义指令"
+                
+                # 重置计数器和时间
+                gesture_counter = {}
+                last_command_time = current_time
+            else:
+                current_command = "000"
+                gesture_counter = {}
+                last_command_time = current_time
+        
+        # 显示当前指令
+        if current_command and (current_time - last_command_time < command_display_duration):
+            cv2.putText(frame, f"Command: {current_command}", (10, 70), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            if pr_command!= current_command:
+                pr_command = current_command
+                print(f"[输出指令] 指令为: {ges[current_command]}")
+                #send_command(ges[current_command])
+        
+        # 显示画面
+        cv2.imshow('Hand Gesture Recognition', frame)
+        
+        # 按ESC退出
+        if cv2.waitKey(5) & 0xFF == 27:
+            break
+    
+    cap.release()
+    cv2.destroyAllWindows()
+    hands.close()
+
+def gesrec(use_camera=False, video_path="", change=False, ins="", file_path=""):
+    """
+    手势识别主函数
+    
+    参数:
+        use_camera (bool): 是否使用摄像头实时识别
+        video_path (str): 视频文件路径(当use_camera=False时使用)
+        change (bool): 是否执行数据库修改操作
+        ins (str): 修改指令(当change=True时使用)
+        file_path (str): 手势视频文件路径(当change=True时使用)
+    """
+    if use_camera:
+        camera_gesture_recognition()
+    else:
+        if not video_path:
+            print("错误: 视频模式需要指定video_path参数")
+            return
+            
         main_recognition(
             video_path=video_path,
-            change=False,
-            ins="change 001 r",
+            change=change,
+            ins=ins,
             file_path=file_path
         )
-        
-        # 记录性能数据
-        elapsed = time.time() - start_time
-        profiler.disable()
-        runtime_data.append((case_name, elapsed))
-        
-        # 保存cProfile结果
-        stats = pstats.Stats(profiler)
-        stats.dump_stats(f"perf_{case_name}.prof")
+if __name__ == '__main__':
+    gesrec(False,video_path = "gestures/fist.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
+    gesrec(False,video_path = "gestures/thumbs_up.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
+    gesrec(False,video_path = "gestures/wave.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
+    gesrec(False,video_path = "gestures/yes.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
+    gesrec(False,video_path = "gestures/tick.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
+    gesrec(True)
+    # import time
+    # import cProfile
+    # import pstats
+    # import matplotlib.pyplot as plt
 
-    # 生成对比图表
-    plt.figure(figsize=(10, 6))
-    names = [x[0] for x in runtime_data]
-    times = [x[1] for x in runtime_data]
-    
-    bars = plt.bar(names, times, color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'])
-    plt.title('手势识别性能对比', fontsize=14)
-    plt.xlabel('测试用例', fontsize=12)
-    plt.ylabel('运行时间 (秒)', fontsize=12)
-    plt.xticks(rotation=45)
-    
-    # 添加数值标签
-    for bar in bars:
-        height = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2., height,
-                 f'{height:.2f}',
-                 ha='center', va='bottom')
-    
-    plt.tight_layout()
-    
-    # 保存并显示图表
-    plt.savefig('performance_comparison.png', dpi=300)
-    plt.show()
+    # plt.rcParams['font.sans-serif'] = ['SimHei'] 
+    # plt.rcParams['axes.unicode_minus'] = False 
 
-    # 打印控制台报告
-    print("\n=== 性能测试报告 ===")
-    print(f"{'测试用例':<15} | {'运行时间(s)':<10}")
-    print("-" * 30)
-    for name, t in runtime_data:
-        print(f"{name:<15} | {t:.2f}")
+    # # 测试用例列表
+    # test_cases = [
+    #     ("gestures/fist.mp4", "new_gesture/tick.mp4"),
+    #     ("gestures/thumbs_up.mp4", "new_gesture/tick.mp4"),
+    #     ("gestures/wave.mp4", "new_gesture/tick.mp4"),
+    #     ("gestures/yes.mp4", "new_gesture/tick.mp4"),
+    #     ("gestures/tick.mp4", "new_gesture/tick.mp4")
+    # ]
+
+    # # 性能数据存储
+    # runtime_data = []
+    # profiler = cProfile.Profile()
+
+    # # 遍历所有测试用例
+    # for idx, (video_path, file_path) in enumerate(test_cases):
+    #     case_name = video_path.split('/')[-1].split('.')[0]  # 提取手势名称
+        
+    #     # 使用cProfile进行分析
+    #     profiler.enable()
+    #     start_time = time.time()
+        
+    #     # 原函数调用
+    #     main_recognition(
+    #         video_path=video_path,
+    #         change=False,
+    #         ins="change 001 r",
+    #         file_path=file_path
+    #     )
+        
+    #     # 记录性能数据
+    #     elapsed = time.time() - start_time
+    #     profiler.disable()
+    #     runtime_data.append((case_name, elapsed))
+        
+    #     # 保存cProfile结果
+    #     stats = pstats.Stats(profiler)
+    #     stats.dump_stats(f"perf_{case_name}.prof")
+
+    # # 生成对比图表
+    # plt.figure(figsize=(10, 6))
+    # names = [x[0] for x in runtime_data]
+    # times = [x[1] for x in runtime_data]
+    
+    # bars = plt.bar(names, times, color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'])
+    # plt.title('手势识别性能对比', fontsize=14)
+    # plt.xlabel('测试用例', fontsize=12)
+    # plt.ylabel('运行时间 (秒)', fontsize=12)
+    # plt.xticks(rotation=45)
+    
+    # # 添加数值标签
+    # for bar in bars:
+    #     height = bar.get_height()
+    #     plt.text(bar.get_x() + bar.get_width()/2., height,
+    #              f'{height:.2f}',
+    #              ha='center', va='bottom')
+    
+    # plt.tight_layout()
+    
+    # # 保存并显示图表
+    # plt.savefig('performance_comparison.png', dpi=300)
+    # plt.show()
+
+    # # 打印控制台报告
+    # print("\n=== 性能测试报告 ===")
+    # print(f"{'测试用例':<15} | {'运行时间(s)':<10}")
+    # print("-" * 30)
+    # for name, t in runtime_data:
+    #     print(f"{name:<15} | {t:.2f}")
     # main_recognition(video_path = "gestures/fist.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
     # main_recognition(video_path = "gestures/thumbs_up.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
     # main_recognition(video_path = "gestures/wave.mp4",change = False , ins = "change 001 r ",file_path = "new_gesture/tick.mp4 ")
