@@ -30,9 +30,6 @@ def initialize_system():
     modules = [
         "ui_module",
         "llm_module",
-        "voice_module",
-        "face_module",
-        "gesture_module"
     ]
 
     threads = []

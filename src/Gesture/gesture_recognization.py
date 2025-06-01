@@ -3,6 +3,8 @@ import mediapipe as mp
 import os
 import time
 
+from car_guide.src.Control import comm_objects
+
 # 数据库：手势名 -> 指令码
 DB_PATH = 'gesture_db.txt'
 ges = {
@@ -195,6 +197,7 @@ def main_recognition(video_path = "" , change = False , ins = " ",file_path = " 
         if gesture in db:
             print(ges[db[gesture]])
             #send_command(ges[db[gesture]])
+            comm_objects.gesture_comm.send_message(ges[db[gesture]], 'llm')
             return db[gesture]
         else:
             print("[警告] 未识别到数据库中的指令")
@@ -265,6 +268,7 @@ def camera_gesture_recognition():
                 pr_command = current_command
                 print(f"[输出指令] 指令为: {ges[current_command]}")
                 #send_command(ges[current_command])
+                comm_objects.gesture_comm.send_message(ges[current_command], 'llm')
         
         # 显示画面
         cv2.imshow('Hand Gesture Recognition', frame)

@@ -1,10 +1,34 @@
-from control import ControlServer
-from client_classes import UICommunication, LLMCommunication, FaceCommunication, GestureCommunication, \
+from car_guide.src.Control.control import ControlServer
+from car_guide.src.Control.client_classes import UICommunication, LLMCommunication, FaceCommunication, GestureCommunication, \
     VoiceCommunication
 import threading
-import time
+import json
+import sys
+import dashscope
+from dashscope.audio.tts import SpeechSynthesizer
+
+dashscope.api_key = 'sk-166fb0f2501140c8ad8e2058aaae67e9'  # set API-key manually
+vol_idx = 0
 
 
+def l2v(text):
+    global vol_idx
+    ret = f"output{vol_idx}.wav"
+    result = SpeechSynthesizer.call(model='sambert-zhichu-v1',
+                                    text=text,
+                                    sample_rate=48000,
+                                    format='wav')
+
+    if result.get_audio_data() is not None:
+        with open(ret, 'wb') as f:
+            f.write(result.get_audio_data())
+            vol_idx +=1
+        print('SUCCESS: get audio data: %dbytes in output.wav' %
+              (sys.getsizeof(result.get_audio_data())))
+    else:
+        print('ERROR: response is %s' % (result.get_response()))
+
+    return ret
 class CommObjects:
     _instance = None
 
@@ -81,8 +105,20 @@ class CommObjects:
         if self._voice_comm is None:
             print("Creating Voice communication instance")
             self._voice_comm = VoiceCommunication('voice')  # 添加身份参数
+            self._voice_comm.handle_message = self.voice_handle_message
         return self._voice_comm
 
+    def voice_handle_message(self, data):
+        try:
+            message = json.loads(data.decode('utf-8'))
+            sender = message['sender']
+            data_content = message['data']
+
+            print(f"Voice received from {sender}: {data_content}")
+            self.voice_comm.send_message(l2v(data_content), 'ui')
+
+        except (json.JSONDecodeError, KeyError) as e:
+            print(f"UI message processing error: {str(e)}")
 
 # 创建全局单例对象容器
 comm_objects = CommObjects()

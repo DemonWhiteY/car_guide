@@ -35,9 +35,6 @@ data为传输数据。
 ├── client_classes.py       # 各模块客户端类
 ├── control.py              # 控制服务器
 ├── main.py                 # 主程序入口
-├── face_module.py          # 人脸模块（只发送）
-├── gesture_module.py       # 手势模块（只发送）
-├── voice_module.py         # 语音模块（发送+接收）
 ├── llm_module.py           # LLM模块（发送+接收）
 └── ui_module.py            # UI模块（只接收）
 ```

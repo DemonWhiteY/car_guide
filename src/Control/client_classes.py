@@ -1,4 +1,4 @@
-from base_client import BaseClient
+from car_guide.src.Control.base_client import BaseClient
 
 
 class UICommunication(BaseClient):
