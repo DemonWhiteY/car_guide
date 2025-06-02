@@ -140,8 +140,8 @@ class CarInfo:
 class LLMProcessor:
     def __init__(self):
         # 获取LLM通信对象
-        # self.llm_comm = comm_objects.llm_comm
-        # self.llm_comm.handle_message = self.custom_handle_message
+        self.llm_comm = comm_objects.llm_comm
+        self.llm_comm.handle_message = self.custom_handle_message
         self.client =  OpenAI(
             api_key= get_api_key(),
             base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
