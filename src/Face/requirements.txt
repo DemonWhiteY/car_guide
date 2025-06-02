@@ -1,0 +1,8 @@
+cv2
+numpy
+os
+time
+insightface
+mediapipe
+collections
+json

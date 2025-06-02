@@ -314,7 +314,7 @@ def recognize_face(cap):
         # 在图像上显示人脸框和识别结果
         if record_name != "None":
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(frame, f"{record_name} ({min_dist:.2f})", (x1, y1 - 10),
+            cv2.putText(frame, f"{record_name}", (x1, y1 - 10),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
         
         # 记录识别的信息是不是Unknown

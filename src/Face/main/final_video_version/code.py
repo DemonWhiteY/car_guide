@@ -15,7 +15,7 @@ model_app.prepare(ctx_id=0, det_size=(640, 640))  # 自动检测 + 对齐
 # 定义数据库文件路径
 DB_PATH = './face_db.npy'
 # 跳帧间隔
-FRAME_SKIP = 5
+RECOG_SKIP = 5
 REGISTER_SKIP = 20
 
 # 人脸裁决最低置信区间，越大越严格
@@ -292,7 +292,7 @@ def recognize_face(cap):
                 print("视频播放错误")
                 break
 
-        frame_count = (frame_count + 1) % FRAME_SKIP
+        frame_count = (frame_count + 1) % RECOG_SKIP
         
         if frame_count != 0:
             continue
@@ -350,7 +350,7 @@ def recognize_face(cap):
         # 在图像上显示人脸框和识别结果
         if record_name != "None":
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(frame, f"{record_name} ({min_dist:.2f})", (x1, y1 - 10),
+            cv2.putText(frame, f"{record_name}", (x1, y1 - 10),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
         
         # 记录识别的信息是不是Unknown
