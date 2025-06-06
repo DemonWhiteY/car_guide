@@ -40,7 +40,8 @@ class CarInfo:
         self.media_volume = 50              # 媒体音量: 0~100
         self.navigation = None              # 导航位置: string
         self.playing_song = None            # 当前播放歌曲: string
-        self.is_playing = True             # True=播放, False=暂停
+        self.is_playing = True              # True=播放, False=暂停
+        self.music_control = "1"          
 
     def get_car_info(self):
         car_info = {
@@ -57,6 +58,7 @@ class CarInfo:
             "navigation": self.navigation,
             "playing_song": self.playing_song,
             "is_playing": self.is_playing,
+            "music_control": "该字段当前值不重要，它可以被设置为next和prev两种。"
         }
         return car_info
     
@@ -97,12 +99,25 @@ class CarInfo:
                 if value not in ["cold", "hot", "off"]:
                     print(f"无效空调模式取值: {value}")
                     return ""
-            elif current_type is bool:
+            elif attr == "music_control":
                 if isinstance(value, str):
                     value = value.lower()
-                    value = True if value in ["on", "true", "播放", "开"] else False
+                    if "next" in value or "下一" in value:
+                        value = 1
+                    elif "prev" in value or "上一" in value:
+                        value = 0
+                    else:
+                        print(f"无效的music_control取值: {value}")
+                        return ""
+            elif current_type is bool:
+                # 统一使用 0 / 1 代表 False / True
+                if isinstance(value, str):
+                    value = value.lower()
+                    value = 1 if value in ["on", "true", "播放", "开"] else 0
                 elif isinstance(value, (int, float)):
-                    value = bool(value)
+                    value = 1 if value else 0
+                elif isinstance(value, bool):
+                    value = 1 if value else 0
             elif current_type is int:
                 value = int(value)
             elif current_type is str:
@@ -114,25 +129,26 @@ class CarInfo:
         setattr(self, attr, value)
         print(f"已本地修改 {attr} 为 {value}")
 
-        # 将 target 映射为中文名（用于发送到 UI 模块）
-        chinese_mapping = {
-            "light": "灯光",
-            "left_front_door": "左前方车门",
-            "right_front_door": "右前方车门",
-            "left_rear_door": "左后方车门",
-            "right_rear_door": "右后方车门",
-            "trunk": "后备箱",
-            "air_conditioner_mode": "空调",
-            "temperature": "空调温度",
-            "media_volume": "媒体音量",
-            "navigation": "导航位置",
-            "playing_song": "播放歌曲",
-            "is_playing": "播放器",
+        # 将 target 映射为ui模块标准名（用于发送到 UI 模块）
+        ui_mapping = {
+            "light": "Light",
+            "left_front_door": "LF_door",
+            "right_front_door": "RF_door",
+            "left_rear_door": "LB_door",
+            "right_rear_door": "RB_door",
+            "trunk": "B_door",
+            "air_conditioner_mode": "AC",
+            "temperature": "Tem",
+            "media_volume": "Voice",
+            "navigation": "Position",
+            "playing_song": "Music",
+            "is_playing": "Play",
+            "music_control": "Next"
         }
-        chinese_name = chinese_mapping.get(attr, attr)
+        ui_name = ui_mapping.get(attr, attr)
         # 构造发送给 UI 模块的消息
         ui_message = {
-            "target": chinese_name,
+            "target": ui_name,
             "value": value
         }
         return ui_message
