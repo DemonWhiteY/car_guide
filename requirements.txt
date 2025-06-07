@@ -1,0 +1,8 @@
+opencv-python
+numpy
+insightface
+mediapipe
+dashscope
+pyaudio
+openai
+jinja2
